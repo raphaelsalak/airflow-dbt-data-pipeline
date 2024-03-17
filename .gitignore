@@ -7,4 +7,4 @@ airflow/airflow.cfg
 airflow/airflow.db
 airflow/standalone_admin_password.txt
 airflow/webserver_config.py
-airflow/__pycache__/
+airflow/dags/__pycache__/
