@@ -1,4 +1,4 @@
-config.py
+airflow/dags/config.py
 
 logs/
 

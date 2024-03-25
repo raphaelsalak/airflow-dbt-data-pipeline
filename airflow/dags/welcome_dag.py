@@ -1,44 +1,9 @@
-import requests
-from airflow.models import BaseOperator
-from airflow.utils.decorators import apply_defaults
-
-class APICallOperator(BaseOperator):
-    """
-    Custom operator to call an API with an API key included in the URL.
-    """
-
-    @apply_defaults
-    def __init__(self, api_url, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.api_url = api_url
-
-    def execute(self, context):
-        data_path = "/opt/airflow/dags/files/employees.csv"
-        self.log.info(f"Calling API: {self.api_url}")
-
-        try:
-            # Send a GET request to the API URL
-            response = requests.get(self.api_url)
-            with open(data_path, "w") as file:
-                file.write(response.text)
-            # Check if the request was successful (status code 200)
-            if response.status_code == 200:
-                # Parse the JSON response
-                data = response.json()
-                print("Data fetched from the API:")
-                print(data)
-                return data
-            else:
-                # If the request was not successful, log the error status code
-                self.log.error(f"Error calling API: {response.status_code}")
-                return None
-        except Exception as e:
-            # Handle any exceptions that occur during the request
-            self.log.error(f"Error calling API: {e}")
-            return None
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.operators.dummy_operator import DummyOperator
+from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.decorators import dag, task
 from airflow.utils.dates import days_ago
 from datetime import datetime
 import requests
@@ -47,60 +12,13 @@ from alpaca.data.requests import CryptoBarsRequest
 from alpaca.data.timeframe import TimeFrame
 import psycopg2
 import os
-
-#put in config file
+import json
+import csv
+from config import api_key
 '''Change in project: use nasa asteroid api to store asteroid data and find which 
 asteroids are closest to far and perform window functions on the data. 
 It'd be cool if we connected a ui with an image of a animated asteroid video
 and the closest asteroid'''
-hostname = os.environ.get('host')
-database = os.environ.get('database')
-username = os.environ.get('username')
-pwd = os.environ.get('password')
-port_id = os.environ.get('port_id')
-api_key = os.environ.get('api_key')
-
-def get_market_data():
-    # No keys required for crypto data
-    client = CryptoHistoricalDataClient()
-    # Creating request object
-    request_params = CryptoBarsRequest(
-        symbol_or_symbols=["BTC/USD"],
-        timeframe=TimeFrame.Day,
-        start="2022-09-01",
-        end="2022-09-07"
-    )
-
-    # Retrieve daily bars for Bitcoin in a DataFrame and printing it
-    btc_bars = client.get_crypto_bars(request_params)
-
-    # Convert to dataframe
-    print(btc_bars.df)
-def get_asteroid_data():
-
-    pass
-def transform_data():
-    pass
-def connect_to_db():
-    conn = None
-    cur = None
-    try:
-        conn = psycopg2.connect(host = hostname, dbname = database, user = username, password = pwd, port = port_id)
-        #cur = conn.cursor()
-        print("successfully connected to postgres db")
-    except Exception as error:
-        print(error)
-    finally:
-        if cur is not None:
-            cur.close()
-        if conn is not None:
-            conn.close()
-
-
-
-def print_welcome():
-    print('Welcome to Airflow!')
-
 def print_hello_world():
     print('Hello World!')
 
@@ -111,10 +29,69 @@ dag = DAG(
     catchup=False
 )
 
-print_welcome_task = PythonOperator(
-    task_id='print_welcome',
-    python_callable=print_welcome,
-    dag=dag
+task1 = PostgresOperator(
+    task_id = 'create_asteroid_table',
+    postgres_conn_id ='postgres_localhost',
+    sql="""
+        create table if not exists asteroid (
+                id VARCHAR(50) PRIMARY KEY,
+                neo_reference_id VARCHAR(50),
+                name VARCHAR(255),
+                nasa_jpl_url VARCHAR(255),
+                absolute_magnitude_h FLOAT,
+                estimated_diameter_min_km FLOAT,
+                estimated_diameter_max_km FLOAT,
+                estimated_diameter_min_m FLOAT,
+                estimated_diameter_max_m FLOAT,
+                estimated_diameter_min_miles FLOAT,
+                estimated_diameter_max_miles FLOAT,
+                estimated_diameter_min_feet FLOAT,
+                estimated_diameter_max_feet FLOAT,
+                is_potentially_hazardous BOOLEAN,
+                is_sentry_object BOOLEAN
+            
+        );
+        """
+)
+
+task2 = PostgresOperator(
+    task_id = 'create_asteroid_distance_table',
+    postgres_conn_id ='postgres_localhost',
+    sql="""
+          create table if not exists CloseApproach (
+            id serial PRIMARY KEY,
+            neo_id VARCHAR(50),
+            close_approach_date DATE,
+            close_approach_date_full VARCHAR(100),
+            epoch_date_close_approach BIGINT,
+            relative_velocity_kmps FLOAT,
+            relative_velocity_kmph FLOAT,
+            relative_velocity_mph FLOAT,
+            miss_distance_astronomical FLOAT,
+            miss_distance_lunar FLOAT,
+            miss_distance_km FLOAT,
+            miss_distance_miles FLOAT,
+            orbiting_body VARCHAR(50),
+            FOREIGN KEY (neo_id) REFERENCES asteroid(id)
+            );  
+        """
+)
+
+test_task2 = PostgresOperator(
+    task_id = 'insert_data',
+    postgres_conn_id ='postgres_localhost',
+    sql="""
+        insert into dag_runs (dt, dag_id) values ('{{ ds }}', '{{ dag.dag_id }}')
+        on conflict (dt, dag_id) do nothing;
+        """
+)
+
+test_task3 = PostgresOperator(
+    task_id = 'delete_data',
+    postgres_conn_id ='postgres_localhost',
+    sql="""
+        delete from dag_runs where dt = '{{ ds }}' and dag_id = '{{ dag.dag_id }}'; 
+        """
 )
 
 print_hello_world_task = PythonOperator(
@@ -122,22 +99,41 @@ print_hello_world_task = PythonOperator(
     python_callable=print_hello_world,
     dag=dag  # Changed dag2 to dag
 )
-get_market_data_task = PythonOperator(
-    task_id='get_market_data',
-    python_callable=get_market_data,
-    dag=dag
-)
-connect_to_db_task = PythonOperator(
-    task_id='connect_to_db',
-    python_callable=connect_to_db,
-    dag=dag
-)
-start_task = DummyOperator(task_id='start', dag=dag)
-api_call_task = APICallOperator(
-    task_id='api_call_task',
-    api_url='https://api.nasa.gov/neo/rest/v1/feed?start_date=2015-09-07&end_date=2015-09-08&api_key=' + str(api_key),
-    dag=dag,
-)
-end_task = DummyOperator(task_id='end', dag=dag)
 
-start_task >> api_call_task >> end_task
+@task
+def get_data():
+    # NOTE: configure this as appropriate for your airflow environment
+    data_path = "/opt/airflow/dags/files/asteroid.csv"
+    os.makedirs(os.path.dirname(data_path), exist_ok=True)
+    url = "https://api.nasa.gov/neo/rest/v1/feed?start_date=2015-09-07&end_date=2015-09-08&api_key=" + api_key
+    postgres_hook = PostgresHook(postgres_conn_id="postgres_localhost")
+    conn = postgres_hook.get_conn()
+    cur = conn.cursor()
+    response = requests.request("GET", url)
+
+    if response.status_code == 200:
+        json_data = response.json()
+        '''array of neo objects so the data looks like this
+        date, 1st entry
+        date, 2nd entry
+        date, 3rd entry
+        needs date or _ to map over the values'''
+        for _, near_earth_objects in json_data['near_earth_objects'].items():
+            for entry in near_earth_objects:
+                # Extract relevant information from the entry
+                id = entry['id']
+                name = entry['name']
+                # Extract other fields as needed
+
+                # Check if the entry already exists in the database
+                cur.execute("SELECT id FROM asteroid WHERE id = %s", (id,))
+                existing_asteroid = cur.fetchone()
+
+                # If the entry doesn't exist, insert it into the database
+                if not existing_asteroid:
+                    cur.execute("""
+                        INSERT INTO asteroid (id, name)
+                        VALUES (%s, %s)
+                    """, (id, name))
+        conn.commit()
+[print_hello_world_task, get_data()] >> task1 >> task2 >> test_task3 >> test_task2
