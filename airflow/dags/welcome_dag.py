@@ -77,6 +77,15 @@ task2 = PostgresOperator(
         """
 )
 
+task3 = PostgresOperator(
+    task_id = 'delete_rows',
+    postgres_conn_id ='postgres_localhost',
+    sql="""
+        delete from closeapproach;
+        delete from asteroid;
+        """
+)
+
 test_task2 = PostgresOperator(
     task_id = 'insert_data',
     postgres_conn_id ='postgres_localhost',
@@ -101,7 +110,7 @@ print_hello_world_task = PythonOperator(
 )
 
 @task
-def get_data():
+def insert_rows():
     # NOTE: configure this as appropriate for your airflow environment
     data_path = "/opt/airflow/dags/files/asteroid.csv"
     os.makedirs(os.path.dirname(data_path), exist_ok=True)
@@ -135,5 +144,12 @@ def get_data():
                         INSERT INTO asteroid (id, name)
                         VALUES (%s, %s)
                     """, (id, name))
+                    date = entry['close_approach_data'][0]['close_approach_date']
+                    cur.execute("""
+                            insert into closeapproach (neo_id, close_approach_date)
+                            values (%s, %s)
+                        """, (id, date))
+                
+
         conn.commit()
-[print_hello_world_task, get_data()] >> task1 >> task2 >> test_task3 >> test_task2
+[print_hello_world_task, task1, task2] >> task3 >> insert_rows() >> test_task3 >> test_task2
