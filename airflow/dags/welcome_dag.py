@@ -145,10 +145,12 @@ def insert_rows():
                         VALUES (%s, %s)
                     """, (id, name))
                     date = entry['close_approach_data'][0]['close_approach_date']
+                    orbiting_body = entry['close_approach_data'][0]['orbiting_body']
+                    print(orbiting_body)
                     cur.execute("""
-                            insert into closeapproach (neo_id, close_approach_date)
-                            values (%s, %s)
-                        """, (id, date))
+                            insert into closeapproach (neo_id, close_approach_date, orbiting_body)
+                            values (%s, %s, %s)
+                        """, (id, date, orbiting_body))
                 
 
         conn.commit()
