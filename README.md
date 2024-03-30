@@ -12,6 +12,6 @@ stores it to a postgresql database using airflow, docker, postgresql, and python
 
 ## Asteroids that orbit Earth model
 ![alt text](image-5.png)
-<img src="image-6.png" alt="alt text" width="400" height="400">
+<img src="image-6.png" alt="alt text" width="400" height="500">
 
 
