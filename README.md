@@ -4,7 +4,7 @@ A data pipeline that pulls data from NASA asteroids api and
 stores it to a postgresql database using airflow, docker, postgresql, and python.
 
 # Using airflow and postgres to make a data pipeline
-![alt text](image.png)
+<img src="image.png" alt="alt text" width="300" height="200">
 ![alt text](image-1.png)
 ![alt text](image-2.png)
 
