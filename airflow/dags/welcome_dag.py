@@ -19,8 +19,8 @@ from config import api_key
 asteroids are closest to far and perform window functions on the data. 
 It'd be cool if we connected a ui with an image of a animated asteroid video
 and the closest asteroid'''
-def print_hello_world():
-    print('Hello World!')
+def print_python_status():
+    print('success')
 
 dag = DAG(
     'welcome_dag',
@@ -78,7 +78,7 @@ task2 = PostgresOperator(
 )
 
 task3 = PostgresOperator(
-    task_id = 'delete_rows',
+    task_id = 'clear_current_tables',
     postgres_conn_id ='postgres_localhost',
     sql="""
         delete from closeapproach;
@@ -87,7 +87,7 @@ task3 = PostgresOperator(
 )
 
 test_task2 = PostgresOperator(
-    task_id = 'insert_data',
+    task_id = 'insert_test_data',
     postgres_conn_id ='postgres_localhost',
     sql="""
         insert into dag_runs (dt, dag_id) values ('{{ ds }}', '{{ dag.dag_id }}')
@@ -96,17 +96,25 @@ test_task2 = PostgresOperator(
 )
 
 test_task3 = PostgresOperator(
-    task_id = 'delete_data',
+    task_id = 'delete_test_data',
     postgres_conn_id ='postgres_localhost',
     sql="""
         delete from dag_runs where dt = '{{ ds }}' and dag_id = '{{ dag.dag_id }}'; 
         """
 )
 
-print_hello_world_task = PythonOperator(
-    task_id='print_hello_world',
-    python_callable=print_hello_world,
+python_status_task = PythonOperator(
+    task_id='python_status',
+    python_callable=print_python_status,
     dag=dag  # Changed dag2 to dag
+)
+start_task = DummyOperator(
+    task_id='start',
+    dag=dag
+)
+end_task = DummyOperator(
+    task_id='end',
+    dag=dag
 )
 
 @task
@@ -154,4 +162,4 @@ def insert_rows():
                 
 
         conn.commit()
-[print_hello_world_task, task1, task2] >> task3 >> insert_rows() >> test_task3 >> test_task2
+start_task >> [python_status_task, task1, task2] >> task3 >> insert_rows() >> test_task3 >> test_task2 >> end_task
