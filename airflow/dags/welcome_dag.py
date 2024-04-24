@@ -140,6 +140,9 @@ def insert_rows():
                 # Extract relevant information from the entry
                 id = entry['id']
                 name = entry['name']
+                estimated_diameter_min_km = entry['estimated_diameter']['kilometers']['estimated_diameter_min']
+                estimated_diameter_max_km = entry['estimated_diameter']['kilometers']['estimated_diameter_max']
+                is_potentially_hazardous = entry['is_potentially_hazardous_asteroid']
                 # Extract other fields as needed
 
                 # Check if the entry already exists in the database
@@ -149,9 +152,9 @@ def insert_rows():
                 # If the entry doesn't exist, insert it into the database
                 if not existing_asteroid:
                     cur.execute("""
-                        INSERT INTO asteroid (id, name)
-                        VALUES (%s, %s)
-                    """, (id, name))
+                        INSERT INTO asteroid (id, name, estimated_diameter_min_km, estimated_diameter_max_km, is_potentially_hazardous)
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, (id, name, estimated_diameter_min_km, estimated_diameter_max_km, is_potentially_hazardous))
                     date = entry['close_approach_data'][0]['close_approach_date']
                     orbiting_body = entry['close_approach_data'][0]['orbiting_body']
                     print(orbiting_body)
