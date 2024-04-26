@@ -1,4 +1,4 @@
-SELECT 'Hazardous' AS is_potentially_hazardous,
+SELECT 'Hazardous asteroids' AS is_potentially_hazardous,
        COUNT(*) AS pha_count
 FROM asteroid
 WHERE is_potentially_hazardous = 'true'
