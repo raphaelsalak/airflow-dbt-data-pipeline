@@ -11,7 +11,7 @@ stores it to a postgresql database server using airflow, docker, postgresql, and
 # Dbt models
 
 ## Asteroids that orbit Earth model
-![alt text](image-11.png)! [alt text](image-8.png)
+![alt text](image-11.png) ![alt text](image-8.png)
 ## Asteroids population distribution animal size comparison model
 ![alt text](image-12.png) ![alt text](image-7.png)
 ## Hazardous vs non-hazardous asteroids
