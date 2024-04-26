@@ -13,5 +13,6 @@ select
     when (estimated_diameter_min_km + estimated_diameter_max_km) / 2 >= 0.1 and (estimated_diameter_min_km + estimated_diameter_max_km) / 2 < 0.2 then 'Gerbil'
     when (estimated_diameter_min_km + estimated_diameter_max_km) / 2 >= 0.01 and (estimated_diameter_min_km + estimated_diameter_max_km) / 2 < 0.1 then 'Cockroach'
     else 'Tardigrades'
-  end as size_category
+  end as size_category,
+  is_potentially_hazardous
 from asteroid
