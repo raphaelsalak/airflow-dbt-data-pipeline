@@ -1,18 +1,24 @@
-select
-  id,
-  estimated_diameter_min_km,
-  estimated_diameter_max_km,
-  case
-    when (estimated_diameter_min_km + estimated_diameter_max_km) / 2 >= 20 and (estimated_diameter_min_km + estimated_diameter_max_km) / 2 <= 30 then 'Blue whale'
-    when (estimated_diameter_min_km + estimated_diameter_max_km) / 2 >= 10 and (estimated_diameter_min_km + estimated_diameter_max_km) / 2 < 20 then 'Colossal squid'
-    when (estimated_diameter_min_km + estimated_diameter_max_km) / 2 >= 5 and (estimated_diameter_min_km + estimated_diameter_max_km) / 2 < 10 then 'Elk'
-    when (estimated_diameter_min_km + estimated_diameter_max_km) / 2 >= 2 and (estimated_diameter_min_km + estimated_diameter_max_km) / 2 < 5 then 'Bear'
-    when (estimated_diameter_min_km + estimated_diameter_max_km) / 2 >= 1 and (estimated_diameter_min_km + estimated_diameter_max_km) / 2 < 2 then 'Lion'
-    when (estimated_diameter_min_km + estimated_diameter_max_km) / 2 >= 0.5 and (estimated_diameter_min_km + estimated_diameter_max_km) / 2 < 1 then 'Dog'
-    when (estimated_diameter_min_km + estimated_diameter_max_km) / 2 >= 0.2 and (estimated_diameter_min_km + estimated_diameter_max_km) / 2 < 0.5 then 'Cat'
-    when (estimated_diameter_min_km + estimated_diameter_max_km) / 2 >= 0.1 and (estimated_diameter_min_km + estimated_diameter_max_km) / 2 < 0.2 then 'Gerbil'
-    when (estimated_diameter_min_km + estimated_diameter_max_km) / 2 >= 0.01 and (estimated_diameter_min_km + estimated_diameter_max_km) / 2 < 0.1 then 'Cockroach'
-    else 'Tardigrades'
-  end as size_category,
-  is_potentially_hazardous
-from asteroid
+SELECT
+  size_category,
+  COUNT(*) AS category_count
+FROM (
+  SELECT
+    id,
+    estimated_diameter_min_km,
+    estimated_diameter_max_km,
+    CASE
+      WHEN (estimated_diameter_min_km + estimated_diameter_max_km) / 2 >= 20 AND (estimated_diameter_min_km + estimated_diameter_max_km) / 2 <= 30 THEN 'Blue whale'
+      WHEN (estimated_diameter_min_km + estimated_diameter_max_km) / 2 >= 10 AND (estimated_diameter_min_km + estimated_diameter_max_km) / 2 < 20 THEN 'Colossal squid'
+      WHEN (estimated_diameter_min_km + estimated_diameter_max_km) / 2 >= 5 AND (estimated_diameter_min_km + estimated_diameter_max_km) / 2 < 10 THEN 'Elk'
+      WHEN (estimated_diameter_min_km + estimated_diameter_max_km) / 2 >= 2 AND (estimated_diameter_min_km + estimated_diameter_max_km) / 2 < 5 THEN 'Bear'
+      WHEN (estimated_diameter_min_km + estimated_diameter_max_km) / 2 >= 1 AND (estimated_diameter_min_km + estimated_diameter_max_km) / 2 < 2 THEN 'Lion'
+      WHEN (estimated_diameter_min_km + estimated_diameter_max_km) / 2 >= 0.5 AND (estimated_diameter_min_km + estimated_diameter_max_km) / 2 < 1 THEN 'Dog'
+      WHEN (estimated_diameter_min_km + estimated_diameter_max_km) / 2 >= 0.2 AND (estimated_diameter_min_km + estimated_diameter_max_km) / 2 < 0.5 THEN 'Cat'
+      WHEN (estimated_diameter_min_km + estimated_diameter_max_km) / 2 >= 0.1 AND (estimated_diameter_min_km + estimated_diameter_max_km) / 2 < 0.2 THEN 'Gerbil'
+      WHEN (estimated_diameter_min_km + estimated_diameter_max_km) / 2 >= 0.01 AND (estimated_diameter_min_km + estimated_diameter_max_km) / 2 < 0.1 THEN 'Cockroach'
+      ELSE 'Tardigrades'
+    END AS size_category,
+    is_potentially_hazardous
+  FROM asteroid
+) AS subquery
+GROUP BY size_category
