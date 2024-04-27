@@ -33,20 +33,11 @@ task1 = PostgresOperator(
     task_id = 'create_asteroid_table',
     postgres_conn_id ='postgres_localhost',
     sql="""
-        create table if not exists asteroid (
+        create table asteroid (
                 id VARCHAR(50) PRIMARY KEY,
-                neo_reference_id VARCHAR(50),
                 name VARCHAR(255),
-                nasa_jpl_url VARCHAR(255),
-                absolute_magnitude_h FLOAT,
                 estimated_diameter_min_km FLOAT,
                 estimated_diameter_max_km FLOAT,
-                estimated_diameter_min_m FLOAT,
-                estimated_diameter_max_m FLOAT,
-                estimated_diameter_min_miles FLOAT,
-                estimated_diameter_max_miles FLOAT,
-                estimated_diameter_min_feet FLOAT,
-                estimated_diameter_max_feet FLOAT,
                 is_potentially_hazardous BOOLEAN,
                 is_sentry_object BOOLEAN
             
@@ -78,11 +69,17 @@ task2 = PostgresOperator(
 )
 
 task3 = PostgresOperator(
-    task_id = 'clear_current_tables',
+    task_id = 'drop_close_approach',
     postgres_conn_id ='postgres_localhost',
     sql="""
-        delete from closeapproach;
-        delete from asteroid;
+        drop table if exists closeapproach;
+        """
+)
+task4 = PostgresOperator(
+    task_id = 'drop_asteroid',
+    postgres_conn_id ='postgres_localhost',
+    sql="""
+        drop table if exists asteroid;
         """
 )
 
@@ -143,6 +140,7 @@ def insert_rows():
                 estimated_diameter_min_km = entry['estimated_diameter']['kilometers']['estimated_diameter_min']
                 estimated_diameter_max_km = entry['estimated_diameter']['kilometers']['estimated_diameter_max']
                 is_potentially_hazardous = entry['is_potentially_hazardous_asteroid']
+                is_sentry_object = entry['is_sentry_object']
                 # Extract other fields as needed
 
                 # Check if the entry already exists in the database
@@ -152,9 +150,9 @@ def insert_rows():
                 # If the entry doesn't exist, insert it into the database
                 if not existing_asteroid:
                     cur.execute("""
-                        INSERT INTO asteroid (id, name, estimated_diameter_min_km, estimated_diameter_max_km, is_potentially_hazardous)
-                        VALUES (%s, %s, %s, %s, %s)
-                    """, (id, name, estimated_diameter_min_km, estimated_diameter_max_km, is_potentially_hazardous))
+                        INSERT INTO asteroid (id, name, estimated_diameter_min_km, estimated_diameter_max_km, is_potentially_hazardous, is_sentry_object)
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                    """, (id, name, estimated_diameter_min_km, estimated_diameter_max_km, is_potentially_hazardous, is_sentry_object))
                     date = entry['close_approach_data'][0]['close_approach_date']
                     orbiting_body = entry['close_approach_data'][0]['orbiting_body']
                     print(orbiting_body)
@@ -165,4 +163,4 @@ def insert_rows():
                 
 
         conn.commit()
-start_task >> [python_status_task, task1, task2] >> task3 >> insert_rows() >> test_task3 >> test_task2 >> end_task
+start_task >> [python_status_task, task3, task4] >> task1 >> task2 >> insert_rows() >> test_task3 >> test_task2 >> end_task
