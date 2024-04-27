@@ -5,10 +5,8 @@ stores it to a postgresql database server using airflow, docker, postgresql, and
 
 # Data pipeline from NASA api to postgresql server 
 ![alt text](image.png) 
-<div style="display:flex;">
-    <img src="image-13.png" alt="alt text" style="width:100%;">
-    <img src="image-2.png" alt="alt text" style="width:100%;">
-</div>
+![alt text](image-13.png) 
+![alt text](image-14.png)
 
 # Dbt models
 ## Asteroids that orbit Earth model
